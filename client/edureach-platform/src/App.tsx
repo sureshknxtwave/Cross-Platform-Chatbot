@@ -51,7 +51,7 @@ export default function App() {
           })
           .filter(
             (x): x is { item: AppointmentRecord; dt: Date } =>
-              Boolean(x.dt) && x.dt.getTime() >= now && x.dt.getTime() <= next24Hours,
+              x.dt !== null && x.dt.getTime() >= now && x.dt.getTime() <= next24Hours,
           )
           .sort((a, b) => a.dt.getTime() - b.dt.getTime())
           .slice(0, 3);
