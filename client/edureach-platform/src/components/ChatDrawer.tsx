@@ -30,8 +30,26 @@ type ReminderStep =
   | "endDate"
   | "contact"
   | null;
+type SymptomAnalysisStep =
+  | "symptoms"
+  | "durationDays"
+  | "temperature"
+  | "breathingIssue"
+  | "chestPain"
+  | "vomiting"
+  | "highRiskProfile"
+  | null;
+
+const formatBotText = (text: string): string => {
+  return text
+    .replace(/\r\n/g, "\n")
+    .replace(/(\d\))\s*/g, "\n$1 ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+};
 
 const quickQuestions = [
+  "Start symptom analysis",
   "I have fever and headache. What should I do?",
   "Book an appointment for tomorrow evening",
   "Set medicine reminder for Paracetamol",
@@ -41,6 +59,8 @@ const quickQuestions = [
 const appointmentIntentPattern = /\b(appointment|book|schedule|doctor visit|consultation)\b/i;
 const contactPattern = /^[0-9+\-\s()]{8,20}$/;
 const reminderIntentPattern = /\b(medicine|medication|tablet|reminder|dose)\b/i;
+const symptomIntentPattern =
+  /\b(symptom analysis|analyze symptoms|check symptoms|symptom checker|triage)\b/i;
 
 export default function ChatDrawer({ open, onClose }: ChatDrawerProps) {
   const { user } = useAuth();
@@ -66,6 +86,7 @@ export default function ChatDrawer({ open, onClose }: ChatDrawerProps) {
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
   const [appointmentStep, setAppointmentStep] = useState<AppointmentStep>(null);
   const [reminderStep, setReminderStep] = useState<ReminderStep>(null);
+  const [symptomAnalysisStep, setSymptomAnalysisStep] = useState<SymptomAnalysisStep>(null);
   const [appointmentData, setAppointmentData] = useState({
     name: "",
     date: "",
@@ -81,6 +102,15 @@ export default function ChatDrawer({ open, onClose }: ChatDrawerProps) {
     startDate: "",
     endDate: "",
     contact: "",
+  });
+  const [symptomAnalysisData, setSymptomAnalysisData] = useState({
+    symptoms: "",
+    durationDays: 0,
+    temperature: 0,
+    breathingIssue: false,
+    chestPain: false,
+    vomiting: false,
+    highRiskProfile: false,
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -199,11 +229,13 @@ export default function ChatDrawer({ open, onClose }: ChatDrawerProps) {
       window.speechSynthesis.speak(utterance);
     }
 
+    const formatted = formatBotText(text);
+
     setMessages((prev) => [
       ...prev,
       {
         id: Date.now() + Math.floor(Math.random() * 1000),
-        text,
+        text: formatted,
         sender: "bot",
       },
     ]);
@@ -218,6 +250,7 @@ export default function ChatDrawer({ open, onClose }: ChatDrawerProps) {
 
   const startReminderFlow = () => {
     setAppointmentStep(null);
+    setSymptomAnalysisStep(null);
     setReminderStep("patientName");
     setReminderData({
       patientName: "",
@@ -229,6 +262,93 @@ export default function ChatDrawer({ open, onClose }: ChatDrawerProps) {
       contact: "",
     });
     addBotMessage("Sure — I can set a medication reminder. Please share patient full name.");
+  };
+
+  const startSymptomAnalysisFlow = () => {
+    setAppointmentStep(null);
+    setReminderStep(null);
+    setSymptomAnalysisStep("symptoms");
+    setSymptomAnalysisData({
+      symptoms: "",
+      durationDays: 0,
+      temperature: 0,
+      breathingIssue: false,
+      chestPain: false,
+      vomiting: false,
+      highRiskProfile: false,
+    });
+    addBotMessage(
+      "I can do a quick symptom analysis.\nPlease describe your main symptoms in one line (example: fever, headache, body pain).",
+    );
+  };
+
+  const isYes = (value: string) => /^(y|yes|true|1)$/i.test(value.trim());
+  const isNo = (value: string) => /^(n|no|false|0)$/i.test(value.trim());
+  const yesNoInvalid = (value: string) => !isYes(value) && !isNo(value);
+
+  const getSymptomAnalysisSummary = (data: {
+    symptoms: string;
+    durationDays: number;
+    temperature: number;
+    breathingIssue: boolean;
+    chestPain: boolean;
+    vomiting: boolean;
+    highRiskProfile: boolean;
+  }) => {
+    const lowerSymptoms = data.symptoms.toLowerCase();
+    const emergencyByText =
+      /\b(unconscious|fainting|seizure|stroke|slurred speech|one side weakness|severe allergic)\b/i.test(
+        lowerSymptoms,
+      );
+    const emergency =
+      emergencyByText ||
+      data.breathingIssue ||
+      data.chestPain ||
+      data.temperature >= 103;
+
+    if (emergency) {
+      return {
+        level: "HIGH RISK",
+        advice:
+          "Please seek emergency care immediately or call your local emergency number now. Do not delay.",
+        next:
+          "If possible, keep hydrated, avoid self-medicating with new drugs, and have someone stay with you until care is available.",
+      };
+    }
+
+    let score = 0;
+    if (data.durationDays >= 3) score += 1;
+    if (data.temperature >= 101) score += 1;
+    if (data.vomiting) score += 1;
+    if (data.highRiskProfile) score += 1;
+
+    if (score >= 3) {
+      return {
+        level: "MEDIUM-HIGH RISK",
+        advice:
+          "You should consult a doctor within 24 hours for proper evaluation.",
+        next:
+          "Monitor temperature, hydration, and symptom progression. If breathing trouble/chest pain starts, go to emergency immediately.",
+      };
+    }
+
+    if (score >= 1) {
+      return {
+        level: "MEDIUM RISK",
+        advice:
+          "Home care may help, but schedule a routine doctor consultation soon.",
+        next:
+          "Rest, fluids, light food, and monitor symptoms for the next 24-48 hours.",
+      };
+    }
+
+    return {
+      level: "LOW RISK",
+      advice:
+        "This looks suitable for home care at the moment if symptoms stay mild.",
+      next:
+        "Rest, hydration, and basic supportive care. If symptoms worsen or persist, consult a doctor.",
+    };
   };
 
   const handleAppointmentFlow = async (messageText: string): Promise<boolean> => {
@@ -385,6 +505,111 @@ export default function ChatDrawer({ open, onClose }: ChatDrawerProps) {
     return true;
   };
 
+  const handleSymptomAnalysisFlow = async (messageText: string): Promise<boolean> => {
+    if (!symptomAnalysisStep) return false;
+    const value = messageText.trim();
+
+    if (symptomAnalysisStep === "symptoms") {
+      if (value.length < 3) {
+        addBotMessage("Please enter symptom details (at least 3 characters).");
+        return true;
+      }
+      setSymptomAnalysisData((prev) => ({ ...prev, symptoms: value }));
+      setSymptomAnalysisStep("durationDays");
+      addBotMessage("How many days have you had these symptoms? (number only)");
+      return true;
+    }
+
+    if (symptomAnalysisStep === "durationDays") {
+      const duration = Number(value);
+      if (!Number.isFinite(duration) || duration < 0 || duration > 60) {
+        addBotMessage("Please enter a valid number of days (0-60).");
+        return true;
+      }
+      setSymptomAnalysisData((prev) => ({ ...prev, durationDays: duration }));
+      setSymptomAnalysisStep("temperature");
+      addBotMessage("Current highest temperature in F? (example: 101.2, or type 0 if none)");
+      return true;
+    }
+
+    if (symptomAnalysisStep === "temperature") {
+      const temp = Number(value);
+      if (!Number.isFinite(temp) || temp < 0 || temp > 110) {
+        addBotMessage("Please enter a valid temperature in F (0-110).");
+        return true;
+      }
+      setSymptomAnalysisData((prev) => ({ ...prev, temperature: temp }));
+      setSymptomAnalysisStep("breathingIssue");
+      addBotMessage("Any breathing difficulty? (yes/no)");
+      return true;
+    }
+
+    if (symptomAnalysisStep === "breathingIssue") {
+      if (yesNoInvalid(value)) {
+        addBotMessage("Please answer with yes or no.");
+        return true;
+      }
+      setSymptomAnalysisData((prev) => ({ ...prev, breathingIssue: isYes(value) }));
+      setSymptomAnalysisStep("chestPain");
+      addBotMessage("Any chest pain or pressure? (yes/no)");
+      return true;
+    }
+
+    if (symptomAnalysisStep === "chestPain") {
+      if (yesNoInvalid(value)) {
+        addBotMessage("Please answer with yes or no.");
+        return true;
+      }
+      setSymptomAnalysisData((prev) => ({ ...prev, chestPain: isYes(value) }));
+      setSymptomAnalysisStep("vomiting");
+      addBotMessage("Persistent vomiting today? (yes/no)");
+      return true;
+    }
+
+    if (symptomAnalysisStep === "vomiting") {
+      if (yesNoInvalid(value)) {
+        addBotMessage("Please answer with yes or no.");
+        return true;
+      }
+      setSymptomAnalysisData((prev) => ({ ...prev, vomiting: isYes(value) }));
+      setSymptomAnalysisStep("highRiskProfile");
+      addBotMessage(
+        "Are you in a high-risk profile (pregnant, age > 65, chronic disease, or low immunity)? (yes/no)",
+      );
+      return true;
+    }
+
+    if (yesNoInvalid(value)) {
+      addBotMessage("Please answer with yes or no.");
+      return true;
+    }
+
+    const finalData = { ...symptomAnalysisData, highRiskProfile: isYes(value) };
+    setSymptomAnalysisData(finalData);
+    setSymptomAnalysisStep(null);
+
+    const summary = getSymptomAnalysisSummary(finalData);
+
+    addBotMessage(
+      [
+        "Symptom Analysis Result",
+        `Risk Level: ${summary.level}`,
+        "",
+        `Primary Symptoms: ${finalData.symptoms}`,
+        `Duration: ${finalData.durationDays} day(s)`,
+        `Highest Temperature: ${finalData.temperature || 0} F`,
+        "",
+        `Recommended Action: ${summary.advice}`,
+        `Next Steps: ${summary.next}`,
+        "",
+        "If symptoms get worse suddenly, seek urgent care immediately.",
+        "This is general guidance, not medical diagnosis.",
+      ].join("\n"),
+    );
+
+    return true;
+  };
+
   const handleSend = async (text?: string) => {
     const messageText = text || input.trim();
     if (!messageText || sending) return;
@@ -400,6 +625,10 @@ export default function ChatDrawer({ open, onClose }: ChatDrawerProps) {
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
 
+    if (await handleSymptomAnalysisFlow(messageText)) {
+      return;
+    }
+
     if (await handleReminderFlow(messageText)) {
       return;
     }
@@ -410,6 +639,11 @@ export default function ChatDrawer({ open, onClose }: ChatDrawerProps) {
 
     if (reminderIntentPattern.test(messageText)) {
       startReminderFlow();
+      return;
+    }
+
+    if (symptomIntentPattern.test(messageText)) {
+      startSymptomAnalysisFlow();
       return;
     }
 
@@ -426,7 +660,7 @@ export default function ChatDrawer({ open, onClose }: ChatDrawerProps) {
         ...prev,
         {
           id: Date.now(),
-          text: "Still thinking... (backend slow)",
+          text: "Please wait...",
           sender: "bot",
         },
       ]);
@@ -513,7 +747,7 @@ export default function ChatDrawer({ open, onClose }: ChatDrawerProps) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 w-full h-[100dvh] bg-white rounded-none shadow-2xl flex flex-col overflow-hidden border border-gray-200 sm:inset-auto sm:bottom-24 sm:right-6 sm:w-[380px] sm:max-w-[calc(100vw-2rem)] sm:h-[520px] sm:rounded-2xl">
+    <div className="fixed inset-0 z-50 w-full h-[100dvh] bg-white rounded-none shadow-2xl flex flex-col overflow-hidden border border-gray-200 sm:inset-auto sm:bottom-8 sm:right-6 sm:w-[520px] sm:max-w-[calc(100vw-2rem)] sm:h-[680px] sm:rounded-2xl">
       
       {/* Header */}
       <div className="bg-maroon px-3 py-3 flex items-center justify-between sm:px-4">
@@ -616,7 +850,7 @@ export default function ChatDrawer({ open, onClose }: ChatDrawerProps) {
                   : "bg-white border"
               }`}
             >
-              {msg.text}
+              <p className="whitespace-pre-wrap leading-7">{msg.text}</p>
             </div>
 
             {msg.sender === "user" && (
@@ -665,7 +899,7 @@ export default function ChatDrawer({ open, onClose }: ChatDrawerProps) {
         <button
           onClick={handleVoiceToggle}
           disabled={!speechSupported || sending}
-          className={`px-3 rounded ${
+          className={`px-3 rounded flex-shrink-0 ${
             isListening ? "bg-red-600 text-white" : "bg-gray-200 text-gray-700"
           }`}
           title={
@@ -682,7 +916,7 @@ export default function ChatDrawer({ open, onClose }: ChatDrawerProps) {
         <button
           onClick={() => handleSend()}
           disabled={!input.trim() || sending}
-          className="bg-maroon text-white px-3 rounded"
+          className="bg-maroon text-white px-3 rounded flex-shrink-0"
         >
           <Send size={16} />
         </button>

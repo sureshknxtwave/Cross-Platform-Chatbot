@@ -25,7 +25,7 @@ export default function FloatingChatButton() {
       {/* Floating button */}
       <button
         onClick={handleClick}
-        className={`fixed right-4 bottom-[calc(env(safe-area-inset-bottom)+1rem)] sm:bottom-6 sm:right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all duration-300 ${
+        className={`fixed right-4 bottom-[calc(env(safe-area-inset-bottom)+1rem)] sm:bottom-6 sm:right-6 z-40 w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all duration-300 ${
           chatOpen ? "bg-gray-600 hover:bg-gray-700" : "bg-maroon hover:bg-maroon-dark"
         }`}
         title={user ? "Chat with Health Assistant Bot" : "Login to chat"}

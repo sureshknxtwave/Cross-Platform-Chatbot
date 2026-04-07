@@ -27,10 +27,28 @@ export default function Navbar() {
         {/* Desktop links */}
         <div className="hidden md:flex items-center gap-6">
           <Link
+            to="/"
+            className="text-gray-700 hover:text-maroon transition-colors duration-200 text-sm font-medium"
+          >
+            Home
+          </Link>
+          <Link
             to="/appointments"
             className="text-gray-700 hover:text-maroon transition-colors duration-200 text-sm font-medium"
           >
             Appointments
+          </Link>
+          <Link
+            to="/insights"
+            className="text-gray-700 hover:text-maroon transition-colors duration-200 text-sm font-medium"
+          >
+            Insights
+          </Link>
+          <Link
+            to="/medications"
+            className="text-gray-700 hover:text-maroon transition-colors duration-200 text-sm font-medium"
+          >
+            Medications
           </Link>
           {navLinks.map((link) => (
             <a key={link.label} href={link.href}
@@ -68,11 +86,32 @@ export default function Navbar() {
       {menuOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 px-4 py-4 space-y-3">
           <Link
+            to="/"
+            onClick={() => setMenuOpen(false)}
+            className="block text-gray-700 hover:text-maroon transition-colors duration-200"
+          >
+            Home
+          </Link>
+          <Link
             to="/appointments"
             onClick={() => setMenuOpen(false)}
             className="block text-gray-700 hover:text-maroon transition-colors duration-200"
           >
             Appointments
+          </Link>
+          <Link
+            to="/insights"
+            onClick={() => setMenuOpen(false)}
+            className="block text-gray-700 hover:text-maroon transition-colors duration-200"
+          >
+            Insights
+          </Link>
+          <Link
+            to="/medications"
+            onClick={() => setMenuOpen(false)}
+            className="block text-gray-700 hover:text-maroon transition-colors duration-200"
+          >
+            Medications
           </Link>
           {navLinks.map((link) => (
             <a key={link.label} href={link.href} onClick={() => setMenuOpen(false)}
