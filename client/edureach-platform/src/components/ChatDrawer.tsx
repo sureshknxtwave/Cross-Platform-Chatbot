@@ -56,6 +56,13 @@ const quickQuestions = [
   "What are common signs of dehydration?",
   "How can I manage mild cold at home?",
 ];
+const followUpTopics = [
+  "Start symptom analysis",
+  "Set medicine reminder",
+  "Book another appointment",
+  "What are emergency warning signs?",
+  "How to manage fever at home?",
+];
 const appointmentIntentPattern = /\b(appointment|book|schedule|doctor visit|consultation)\b/i;
 const contactPattern = /^[0-9+\-\s()]{8,20}$/;
 const reminderIntentPattern = /\b(medicine|medication|tablet|reminder|dose)\b/i;
@@ -64,13 +71,15 @@ const symptomIntentPattern =
 
 export default function ChatDrawer({ open, onClose }: ChatDrawerProps) {
   const { user } = useAuth();
+  const getInitialGreeting = () =>
+    `Hi ${
+      user?.name?.split(" ")[0] || "there"
+    }! 👋 I'm Health Assistant Bot. I can help with symptoms, basic care tips, and appointment guidance.`;
 
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      text: `Hi ${
-        user?.name?.split(" ")[0] || "there"
-      }! 👋 I'm Health Assistant Bot. I can help with symptoms, basic care tips, and appointment guidance.`,
+      text: getInitialGreeting(),
       sender: "bot",
     },
   ]);
@@ -84,6 +93,7 @@ export default function ChatDrawer({ open, onClose }: ChatDrawerProps) {
   const [selectedVoiceURI, setSelectedVoiceURI] = useState("");
   const [speechRate, setSpeechRate] = useState(1);
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
+  const [showFollowUpTopics, setShowFollowUpTopics] = useState(false);
   const [appointmentStep, setAppointmentStep] = useState<AppointmentStep>(null);
   const [reminderStep, setReminderStep] = useState<ReminderStep>(null);
   const [symptomAnalysisStep, setSymptomAnalysisStep] = useState<SymptomAnalysisStep>(null);
@@ -239,6 +249,9 @@ export default function ChatDrawer({ open, onClose }: ChatDrawerProps) {
         sender: "bot",
       },
     ]);
+    if (/do you have any other questions/i.test(formatted)) {
+      setShowFollowUpTopics(true);
+    }
   };
 
   const startAppointmentFlow = () => {
@@ -417,6 +430,7 @@ export default function ChatDrawer({ open, onClose }: ChatDrawerProps) {
       addBotMessage(
         `Appointment request submitted successfully.\nReference ID: ${saved?.id || "N/A"}\n\nName: ${finalData.name}\nDate: ${finalData.date}\nTime: ${finalData.time}\nSymptoms: ${finalData.symptoms}\nContact: ${finalData.contact}\n\nOur team will reach out shortly to confirm your slot.`,
       );
+      addBotMessage("Do you have any other questions I can help with?");
     } catch (error) {
       addBotMessage(
         error instanceof Error
@@ -624,6 +638,7 @@ export default function ChatDrawer({ open, onClose }: ChatDrawerProps) {
 
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
+    setShowFollowUpTopics(false);
 
     if (await handleSymptomAnalysisFlow(messageText)) {
       return;
@@ -744,6 +759,50 @@ export default function ChatDrawer({ open, onClose }: ChatDrawerProps) {
     }
   };
 
+  const handleClearChat = () => {
+    const shouldClear = window.confirm(
+      "Clear this chat conversation? This will remove all current messages.",
+    );
+    if (!shouldClear) return;
+
+    setMessages([
+      {
+        id: Date.now(),
+        text: getInitialGreeting(),
+        sender: "bot",
+      },
+    ]);
+    setInput("");
+    setSending(false);
+    setAppointmentStep(null);
+    setReminderStep(null);
+    setSymptomAnalysisStep(null);
+    setShowVoiceSettings(false);
+    setShowFollowUpTopics(false);
+    setAppointmentData({ name: "", date: "", time: "", symptoms: "", contact: "" });
+    setReminderData({
+      patientName: "",
+      medicineName: "",
+      dosage: "",
+      frequency: "",
+      startDate: "",
+      endDate: "",
+      contact: "",
+    });
+    setSymptomAnalysisData({
+      symptoms: "",
+      durationDays: 0,
+      temperature: 0,
+      breathingIssue: false,
+      chestPain: false,
+      vomiting: false,
+      highRiskProfile: false,
+    });
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+  };
+
   if (!open) return null;
 
   return (
@@ -764,6 +823,13 @@ export default function ChatDrawer({ open, onClose }: ChatDrawerProps) {
         </div>
 
         <div className="flex gap-1">
+          <button
+            onClick={handleClearChat}
+            className="text-white p-1 text-xs"
+            title="Clear chat"
+          >
+            Clear
+          </button>
           <button
             onClick={() => setShowVoiceSettings((prev) => !prev)}
             className="text-white p-1 text-xs"
@@ -881,6 +947,20 @@ export default function ChatDrawer({ open, onClose }: ChatDrawerProps) {
               className="text-xs border px-2 py-1 m-1 rounded inline-block"
             >
               {q}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {showFollowUpTopics && (
+        <div className="p-2 border-t overflow-x-auto whitespace-nowrap bg-white">
+          {followUpTopics.map((topic) => (
+            <button
+              key={topic}
+              onClick={() => handleSend(topic)}
+              className="text-xs border px-2 py-1 m-1 rounded inline-block bg-gray-50 hover:bg-gray-100"
+            >
+              {topic}
             </button>
           ))}
         </div>

@@ -27,7 +27,7 @@ export default function SignupPage() {
       // registerUser now returns { token, user } directly
       const data = await registerUser({ name, email, password, phone: phone || undefined });
       login(data.token);
-      toast.success("Account created! Welcome to EduReach.");
+      toast.success("Account created! Welcome to HealthCare AI.");
       navigate("/");
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Registration failed");
