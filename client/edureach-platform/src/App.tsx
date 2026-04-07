@@ -49,10 +49,8 @@ export default function App() {
             const dt = parseAppointmentDateTime(item);
             return { item, dt };
           })
-          .filter(
-            (x): x is { item: AppointmentRecord; dt: Date } =>
-              x.dt !== null && x.dt.getTime() >= now && x.dt.getTime() <= next24Hours,
-          )
+          .filter((x): x is { item: AppointmentRecord; dt: Date } => x.dt !== null)
+          .filter((x) => x.dt.getTime() >= now && x.dt.getTime() <= next24Hours)
           .sort((a, b) => a.dt.getTime() - b.dt.getTime())
           .slice(0, 3);
 
