@@ -6,4 +6,3 @@ router.post("/register", register);
 router.post("/login", login);
 router.get("/me", authMiddleware, getMe);
 export default router;
-//# sourceMappingURL=auth.routes.js.map

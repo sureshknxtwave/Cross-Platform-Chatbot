@@ -33,4 +33,3 @@ const authMiddleware = (req, res, next) => {
     }
 };
 export default authMiddleware;
-//# sourceMappingURL=auth.middleware.js.map

@@ -45,4 +45,3 @@ app.use((_req, res) => {
 // Global error handler (must be last)
 app.use(errorHandler);
 export default app;
-//# sourceMappingURL=app.js.map

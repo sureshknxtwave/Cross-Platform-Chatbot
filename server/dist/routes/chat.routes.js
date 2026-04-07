@@ -8,4 +8,3 @@ router.get("/appointments", listAppointments);
 router.get("/appointments/insights", getAppointmentInsights);
 router.get("/medication-reminders", listMedicationReminders);
 export default router;
-//# sourceMappingURL=chat.routes.js.map

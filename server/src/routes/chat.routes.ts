@@ -6,7 +6,7 @@ import {
   listAppointments,
   listMedicationReminders,
   sendMessage,
-} from "../controllers/chat.controller.ts";
+} from "../controllers/chat.controller.js";
 
 const router = Router();
 router.post("/message", sendMessage);

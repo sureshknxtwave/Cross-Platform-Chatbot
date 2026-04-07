@@ -7,4 +7,3 @@ const KnowledgeDocSchema = new Schema({
     metadata: { type: Schema.Types.Mixed, default: {} },
 });
 export default mongoose.model("KnowledgeDoc", KnowledgeDocSchema, "knowledge_docs");
-//# sourceMappingURL=knowledge-doc.model.js.map

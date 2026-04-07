@@ -7,4 +7,3 @@ export const hashPassword = async (plainPassword) => {
 export const comparePassword = async (plainPassword, hashedPassword) => {
     return await bcrypt.compare(plainPassword, hashedPassword);
 };
-//# sourceMappingURL=password.util.js.map

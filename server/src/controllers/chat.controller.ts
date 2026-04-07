@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
-import { getRAGResponse } from "../services/rag.service.ts";
-import Appointment from "../models/appointment.model.ts";
-import MedicationReminder from "../models/medication-reminder.model.ts";
+import { getRAGResponse } from "../services/rag.service.js";
+import Appointment from "../models/appointment.model.js";
+import MedicationReminder from "../models/medication-reminder.model.js";
 
 const isValidContact = (contact: string): boolean => /^[0-9+\-\s()]{8,20}$/.test(contact);
 

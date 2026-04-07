@@ -41,4 +41,3 @@ const AppointmentSchema = new Schema({
 });
 const Appointment = mongoose.model("Appointment", AppointmentSchema);
 export default Appointment;
-//# sourceMappingURL=appointment.model.js.map

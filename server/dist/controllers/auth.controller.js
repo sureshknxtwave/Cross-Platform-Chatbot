@@ -101,4 +101,3 @@ export const getMe = async (req, res, next) => {
         next(error);
     }
 };
-//# sourceMappingURL=auth.controller.js.map

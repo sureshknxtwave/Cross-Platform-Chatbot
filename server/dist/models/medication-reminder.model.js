@@ -12,4 +12,3 @@ const MedicationReminderSchema = new Schema({
 });
 const MedicationReminder = mongoose.model("MedicationReminder", MedicationReminderSchema);
 export default MedicationReminder;
-//# sourceMappingURL=medication-reminder.model.js.map

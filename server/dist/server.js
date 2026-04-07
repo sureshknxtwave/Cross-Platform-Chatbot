@@ -21,4 +21,3 @@ const start = async () => {
     }
 };
 start();
-//# sourceMappingURL=server.js.map

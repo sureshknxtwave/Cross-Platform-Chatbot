@@ -43,4 +43,3 @@ export const initiateOutboundCall = async (payload) => {
     const data = (await response.json());
     return data;
 };
-//# sourceMappingURL=vapi.service.js.map

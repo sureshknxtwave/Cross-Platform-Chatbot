@@ -198,4 +198,3 @@ export const listMedicationReminders = async (_req, res, next) => {
         next(error);
     }
 };
-//# sourceMappingURL=chat.controller.js.map

@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
-import User from "../models/user.model.ts";
-import { hashPassword, comparePassword } from "../utils/password.util.ts";
-import { generateToken } from "../utils/jwt.util.ts";
+import User from "../models/user.model.js";
+import { hashPassword, comparePassword } from "../utils/password.util.js";
+import { generateToken } from "../utils/jwt.util.js";
 
 // ROUTE: POST /api/auth/register
 // ACCESS: Public — anyone can hit this

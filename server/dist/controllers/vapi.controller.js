@@ -34,4 +34,3 @@ export const startCall = async (req, res, next) => {
         next(error);
     }
 };
-//# sourceMappingURL=vapi.controller.js.map
