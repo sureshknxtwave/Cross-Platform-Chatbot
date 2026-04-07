@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">HealthCare AI</string>
+    <string name="title_activity_main">HealthCare AI</string>
+    <string name="package_name">in.healthcareai.app</string>
+    <string name="custom_url_scheme">in.healthcareai.app</string>
+</resources>
